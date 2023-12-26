@@ -1,0 +1,6 @@
+@PTN_BackendAssignment_HostAddress = http://localhost:5244
+
+GET {{PTN_BackendAssignment_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
