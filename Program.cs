@@ -8,12 +8,13 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//
+// Retrieve configuration values
 var jwtSecret = builder.Configuration["Authentication:JWT:Secret"];
 var jwtAudience = builder.Configuration["Authentication:JWT:Audience"];
 var jwtIssuer = builder.Configuration["Authentication:JWT:Issuer"];
 var connectionString = builder.Configuration.GetConnectionString("MSSQL");
 
+// Check for missing or empty configuration values
 if (string.IsNullOrEmpty(jwtSecret) ||
     string.IsNullOrEmpty(jwtAudience) ||
     string.IsNullOrEmpty(jwtIssuer) ||
@@ -22,40 +23,42 @@ if (string.IsNullOrEmpty(jwtSecret) ||
     throw new InvalidOperationException("One or more required configuration values are missing or empty.");
 }
 
-// Setup db context
+// Setup database context
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
 
-// Initalize JWT helper
+// Initialize JWT helper
 JwtHelper.Initialize(builder.Configuration.GetSection("Authentication:JWT"));
 
-// JSON Web Token Authentication
+// Configure JSON Web Token Authentication
 if (string.IsNullOrEmpty(jwtSecret))
 {
-    // Handle the case where the secret is null or empty. You might throw an exception, log an error, or use a default key.
     throw new InvalidOperationException("JWT secret is not configured.");
 }
-builder.Services.AddAuthentication().AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuerSigningKey = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtSecret)),
-            ValidAudience = builder.Configuration["Authentication:JWT:Audience"],
-            ValidIssuer = builder.Configuration["Authentication:JWT:Issuer"]
-        };
-    }
-);
 
-// Add services to the container.
+builder.Services.AddAuthentication().AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtSecret)),
+        ValidAudience = jwtAudience,
+        ValidIssuer = jwtIssuer
+    };
+});
+
+// Add services to the container
 builder.Services.AddScoped<AuthService, AuthService>();
 
+// Configure controllers
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+// Configure Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
+    // Configure Bearer token security
     options.AddSecurityDefinition("Bearer",
         new OpenApiSecurityScheme
         {
@@ -64,34 +67,39 @@ builder.Services.AddSwaggerGen(options =>
             Name = "Authorization",
             Type = SecuritySchemeType.ApiKey
         }
-        );
+    );
+
+    // Add security requirement for Bearer token
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
         {
+            new OpenApiSecurityScheme
             {
-                new OpenApiSecurityScheme
+                Reference = new OpenApiReference
                 {
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = "Bearer"
-                    }
-                },
-                new string[] { }
-            }
-        });
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] { }
+        }
+    });
 });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+// Enable authorization
 app.UseAuthorization();
 
+// Map controllers
 app.MapControllers();
 
+// Run the application
 app.Run();
