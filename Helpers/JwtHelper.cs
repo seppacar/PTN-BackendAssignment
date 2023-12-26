@@ -10,13 +10,15 @@ namespace PTN_BackendAssignment.Helpers
         private static string? JwtIssuer;
         private static string? JwtAudience;
         private static string? JwtSecret;
-
+        private static double JwtExiprationHrs;
         // Initialize method to set configuration values
         public static void Initialize(IConfiguration configuration)
         {
             JwtIssuer = configuration["Issuer"] ?? string.Empty;
             JwtAudience = configuration["Audience"] ?? string.Empty;
             JwtSecret = configuration["Secret"] ?? string.Empty;
+            var expirationHrs = configuration?["ExpirationHours"] ?? string.Empty;
+            JwtExiprationHrs = double.Parse(expirationHrs);
         }
 
         /// <summary>
@@ -39,7 +41,7 @@ namespace PTN_BackendAssignment.Helpers
                 JwtIssuer,
                 JwtAudience,
                 claims,
-                expires: DateTime.Now.AddHours(1), // Adjust token expiration as needed
+                expires: DateTime.Now.AddHours(JwtExiprationHrs), // Adjust token expiration as needed
                 signingCredentials: new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256)
             );
 

@@ -5,7 +5,7 @@ namespace PTN_BackendAssignment.Models
     public class Task
     {
         [Key]
-        public int TaskId {  get; set; }
+        public int TaskId { get; set; }
 
         [Required]
         public string Title { get; set; } = string.Empty;

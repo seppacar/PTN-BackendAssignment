@@ -14,13 +14,27 @@ namespace PTN_BackendAssignment.Controllers
             _authService = authService;
         }
 
-        [HttpPost]
+        [HttpPost("login")]
         public async Task<IActionResult> Login(AuthDTO authDTO)
         {
             try
             {
-                var token = await _authService.login(authDTO);
-                return Ok(token);
+                var token = await _authService.Login(authDTO);
+                return Ok(new { Token = token });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register(AuthDTO authDTO)
+        {
+            try
+            {
+                var token = await _authService.Register(authDTO);
+                return Ok(new { Token = token });
             }
             catch (Exception ex)
             {

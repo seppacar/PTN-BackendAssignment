@@ -1,59 +1,90 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using PTN_BackendAssignment.Models;
+using Microsoft.IdentityModel.JsonWebTokens;
 using PTN_BackendAssignment.Data;
 using PTN_BackendAssignment.DTOs;
+using PTN_BackendAssignment.Helpers;
+using PTN_BackendAssignment.Models;
+using System.Security.Claims;
 
 namespace PTN_BackendAssignment.Services
-{ 
+{
     public class AuthService
     {
         private readonly ApplicationDbContext _context;
 
         public AuthService(ApplicationDbContext context)
         {
-            _context = context;
+            _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public async Task<string> register(AuthDTO authDto)
+        /// <summary>
+        /// Registers a new user.
+        /// </summary>
+        /// <param name="authDto">The authentication DTO containing user data.</param>
+        /// <returns>The generated JWT token upon successful registration.</returns>
+        public async Task<string> Register(AuthDTO authDto)
         {
-            // Check if user with same email already exists
-            var user = await _context.Users.FirstOrDefaultAsync(user => user.Email ==  authDto.Email);
+            // Check if user with the same email already exists
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == authDto.Email);
             if (user != null)
             {
-                throw new Exception("User with same email exists, please use another email address.");
+                throw new Exception("User with the same email exists. Please use another email address.");
             }
 
-            // Initalize empty user object
-            var userToCreate = new User();
+            // Initialize an empty user object
+            var newUser = new User();
 
             // Hash the password using BCrypt
             string passwordHash = BCrypt.Net.BCrypt.HashPassword(authDto.Password);
 
-            // Set user objects fields
-            userToCreate.PasswordHash = passwordHash;
-            userToCreate.Email = authDto.Email;
+            // Set user object fields
+            newUser.PasswordHash = passwordHash;
+            newUser.Email = authDto.Email;
 
-            //
-            var createdUser = await _context.Users.AddAsync(userToCreate);
+            // Add the new user to the database
+            await _context.Users.AddAsync(newUser);
+            await _context.SaveChangesAsync();
 
+            // Generate JWT token for the registered user
+            var claims = new List<Claim>
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, newUser.UserId.ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, newUser.Email),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            };
 
-            return "asd";
+            var token = JwtHelper.GenerateToken(claims);
+
+            return token;
         }
 
-        public async Task<string> login(AuthDTO authDTO)
+        /// <summary>
+        /// Performs user login and generates a JWT token upon successful authentication.
+        /// </summary>
+        /// <param name="authDTO">The authentication DTO containing user credentials.</param>
+        /// <returns>The generated JWT token upon successful authentication.</returns>
+        public async Task<string> Login(AuthDTO authDTO)
         {
-            var userEntity = await _context.Users.SingleOrDefaultAsync(u => u.Email == authDTO.Email);
+            // Find the user by email
+            var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == authDTO.Email);
 
-            // If user is not found or password doesn't match throw exception
-            if (userEntity == null || !BCrypt.Net.BCrypt.Verify(authDTO.Password, userEntity.PasswordHash))
+            // If user is not found or password doesn't match, throw an exception
+            if (user == null || !BCrypt.Net.BCrypt.Verify(authDTO.Password, user.PasswordHash))
             {
-                throw new Exception("Authentication failed.");
+                throw new Exception("Authentication failed. Invalid email or password.");
             }
 
-            // Generate token and return here
+            // Generate JWT token for the authenticated user
+            var claims = new List<Claim>
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            };
 
-            return "";
+            var token = JwtHelper.GenerateToken(claims);
+
+            return token;
         }
-
     }
 }
