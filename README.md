@@ -1,6 +1,6 @@
 # PTN Backend Assignment
 
-This is an assignment project for {Piton Technology}.
+This is an assignment project for Piton Technology Built on .NET Core 8. Featuring JWT authentication, custom authorization, and Entity Framework Core (Code-First) for MSSQL, the project efficiently manages daily, weekly, and monthly tasks. The inclusion of Swagger ensures thorough API documentation.
 
 ## Prerequisites
 
