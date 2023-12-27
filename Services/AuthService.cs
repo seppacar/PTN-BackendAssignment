@@ -14,7 +14,7 @@ namespace PTN_BackendAssignment.Services
 
         public AuthService(ApplicationDbContext context)
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _context = context;
         }
 
         /// <summary>
@@ -48,7 +48,7 @@ namespace PTN_BackendAssignment.Services
             // Generate JWT token for the registered user
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub, newUser.UserId.ToString()),
+                new Claim(JwtRegisteredClaimNames.Sub, newUser.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, newUser.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             };
@@ -77,7 +77,7 @@ namespace PTN_BackendAssignment.Services
             // Generate JWT token for the authenticated user
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             };

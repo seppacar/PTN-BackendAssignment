@@ -1,11 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace PTN_BackendAssignment.Models
 {
     public class User
     {
         [Key]
-        public int UserId { get; set; }
+        public int Id { get; set; }
 
         [Required]
         public string Email { get; set; } = string.Empty;
@@ -13,6 +14,9 @@ namespace PTN_BackendAssignment.Models
         [Required]
         public string PasswordHash { get; set; } = string.Empty;
 
-        public List<Task> Tasks { get; set; } = new List<Task>();
+        public DateTime CreatedAt = DateTime.Now;
+
+        [JsonIgnore]
+        public List<TaskItem> Tasks { get; set; } = new List<TaskItem>();
     }
 }
