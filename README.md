@@ -7,7 +7,7 @@ This is an assignment project for {Piton Technology}.
 To run the project, make sure you have the following installed:
 
 - [**.NET SDK**](https://dotnet.microsoft.com/download)
-- [**SQL Server**](https://www.microsoft.com/en-us/sql-server/sql-server-downloads) or another database system
+- [**SQL Server**](https://www.microsoft.com/en-us/sql-server/sql-server-downloads)
 
 ## Getting Started
 
