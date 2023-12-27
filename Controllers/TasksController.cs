@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PTN_BackendAssignment.Authorization;
 using PTN_BackendAssignment.DTOs;
 using PTN_BackendAssignment.Services;
 using System.Security.Claims;
@@ -7,6 +9,7 @@ namespace PTN_BackendAssignment.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class TasksController : ControllerBase
     {
         private readonly TaskItemService _taskItemService;
@@ -23,9 +26,9 @@ namespace PTN_BackendAssignment.Controllers
             {
                 var userIdentity = User.Identity as ClaimsIdentity;
 
-                //var userId = Convert.ToInt32(userIdentity.FindFirst(ClaimTypes.NameIdentifier).Value);
+                var userId = Convert.ToInt32(userIdentity.FindFirst(ClaimTypes.NameIdentifier).Value);
 
-                var createdTask = await _taskItemService.CreateTaskItem(taskItemDTO, 1); // TOOD: Change to userId
+                var createdTask = await _taskItemService.CreateTaskItem(taskItemDTO, userId);
 
                 return CreatedAtAction(nameof(GetUserTaskById), new { taskId = createdTask.Id }, createdTask);
             }
@@ -50,6 +53,7 @@ namespace PTN_BackendAssignment.Controllers
         }
 
         [HttpGet("{taskId}")]
+        [AuthorizeTaskItemOwner]
         public async Task<IActionResult> GetUserTaskById(int taskId)
         {
             try
@@ -64,6 +68,7 @@ namespace PTN_BackendAssignment.Controllers
         }
 
         [HttpGet("user/{userId}")]
+        [AuthorizeTaskItemOwner]
         public async Task<IActionResult> GetUserTasksByUserId(int userId)
         {
             try
@@ -79,6 +84,7 @@ namespace PTN_BackendAssignment.Controllers
 
 
         [HttpPut("{taskId}")]
+        [AuthorizeTaskItemOwner]
         public async Task<IActionResult> UpdateUserTask(int taskId, [FromBody] TaskItemUpdateDTO taskItemDTO)
         {
             try
@@ -94,6 +100,7 @@ namespace PTN_BackendAssignment.Controllers
         }
 
         [HttpDelete("{taskId}")]
+        [AuthorizeTaskItemOwner]
         public async Task<IActionResult> DeleteUserTask(int taskId)
         {
             try
