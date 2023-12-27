@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PTN_BackendAssignment.Authorization;
 using PTN_BackendAssignment.DTOs;
 using PTN_BackendAssignment.Services;
 using System.Security.Claims;
@@ -7,7 +8,7 @@ using System.Security.Claims;
 namespace PTN_BackendAssignment.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class TasksController : ControllerBase
     {
         private readonly TaskItemService _taskItemService;
@@ -18,7 +19,6 @@ namespace PTN_BackendAssignment.Controllers
         }
 
         [HttpPost]
-        [Authorize]
         public async Task<IActionResult> CreateTaskAsync([FromBody] TaskItemCreateDTO taskItemDTO)
         {
             try
@@ -53,7 +53,6 @@ namespace PTN_BackendAssignment.Controllers
         }
 
         [HttpGet("{taskId}")]
-        [Authorize]
         public async Task<IActionResult> GetUserTaskById(int taskId)
         {
             try

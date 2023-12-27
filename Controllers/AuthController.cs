@@ -5,7 +5,7 @@ using PTN_BackendAssignment.Services;
 namespace PTN_BackendAssignment.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
         private readonly AuthService _authService;
