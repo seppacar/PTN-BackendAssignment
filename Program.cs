@@ -5,8 +5,9 @@ using PTN_BackendAssignment.Data;
 using PTN_BackendAssignment.Helpers;
 using PTN_BackendAssignment.Services;
 using System.Text;
+using System.Text.Json.Serialization;
 
-
+// Create the web application builder
 var builder = WebApplication.CreateBuilder(args);
 
 // Retrieve configuration values
@@ -56,8 +57,9 @@ builder.Services.AddScoped<TaskItemService, TaskItemService>();
 // Add AutoMapper
 builder.Services.AddAutoMapper(typeof(AutoMapperProfiles));
 
-// Configure controllers
-builder.Services.AddControllers();
+// Configure controllers with JSON serialization settings
+builder.Services.AddControllers()
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 // Configure Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
@@ -91,6 +93,7 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+// Build the application
 var app = builder.Build();
 
 // Configure the HTTP request pipeline

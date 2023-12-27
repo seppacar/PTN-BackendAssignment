@@ -16,19 +16,22 @@ namespace PTN_BackendAssignment.Authorization
             var userId = GetUserIdFromContext(context);
             var taskId = GetTaskIdFromRoute(context);
 
-            if (userId.HasValue && taskId.HasValue) 
+            if (userId.HasValue && taskId.HasValue)
             {
-                if (!IsTaskItemOwner(taskId.Value, userId, taskItemService))
+                if (!IsTaskItemOwner(taskId.Value, userId.Value, taskItemService))
                 {
+                    // If the user is not the owner, forbid access
                     context.Result = new ForbidResult();
                 }
             }
             else
             {
+                // If user ID or task ID is not available, forbid access
                 context.Result = new ForbidResult();
             }
         }
 
+        // Get user ID from the ClaimsPrincipal in the HttpContext
         private int? GetUserIdFromContext(AuthorizationFilterContext context)
         {
             var userIdentity = context.HttpContext.User.Identity as ClaimsIdentity;
@@ -41,29 +44,24 @@ namespace PTN_BackendAssignment.Authorization
                     return userId;
                 }
             }
+
             return null;
         }
 
+        // Get task ID from the route parameters
         private int? GetTaskIdFromRoute(AuthorizationFilterContext context)
         {
-            if (context.RouteData.Values.TryGetValue("taskId", out var taskIdValue) && int.TryParse(taskIdValue?.ToString(), out var taskId))
-            {
-                return taskId;
-            }
-
-            return null;
+            return context.RouteData.Values.TryGetValue("taskId", out var taskIdValue)
+                ? int.TryParse(taskIdValue?.ToString(), out var taskId) ? taskId : null
+                : null;
         }
 
-        private bool IsTaskItemOwner(int taskId, int? userId, TaskItemService taskItemService)
+        // Check if the user is the owner of the task item
+        private bool IsTaskItemOwner(int taskId, int userId, TaskItemService taskItemService)
         {
             // Implement your logic to check if the user is the owner of the task item
-            if (userId.HasValue)
-            {
-                var taskItem = taskItemService.GetTaskItemById(taskId).Result;
-                return taskItem != null && taskItem.Owner.Id == userId;
-            }
-
-            return false;
+            var taskItem = taskItemService.GetTaskItemById(taskId).Result;
+            return taskItem != null && taskItem.Owner.Id == userId;
         }
     }
 }

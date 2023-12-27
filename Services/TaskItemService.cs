@@ -8,7 +8,7 @@ namespace PTN_BackendAssignment.Services
 {
     public class TaskItemService
     {
-        public ApplicationDbContext _context;
+        private readonly ApplicationDbContext _context;
         private readonly IMapper _mapper;
 
         public TaskItemService(ApplicationDbContext context, IMapper mapper)
@@ -17,71 +17,114 @@ namespace PTN_BackendAssignment.Services
             _mapper = mapper;
         }
 
-        public async Task<TaskItemReadDTO> CreateTaskItem(TaskItemCreateDTO userTaskDTO, int ownerId)
+        /// <summary>
+        /// Create a new TaskItem.
+        /// </summary>
+        /// <param name="taskItemDTO">The DTO containing data for the new TaskItem.</param>
+        /// <param name="ownerId">The owner's ID for the TaskItem.</param>
+        /// <returns>The created TaskItem DTO.</returns>
+        public async Task<TaskItemReadDTO> CreateTaskItem(TaskItemCreateDTO taskItemDTO, int ownerId)
         {
-            // Map UserTaskDTO to UserTask entity
-            var newUserTask = _mapper.Map<TaskItem>(userTaskDTO);
-            // Set ownerId
-            newUserTask.OwnerId = ownerId;
+            // Map DTO to entity
+            var newTaskItem = _mapper.Map<TaskItem>(taskItemDTO);
 
-            // Add the new UserTask entity to the DbContext
-            await _context.TasksItems.AddAsync(newUserTask);
+            // Set ownerId
+            newTaskItem.OwnerId = ownerId;
+
+            // Calculate DueDate
+            newTaskItem.CalculateDueDate();
+
+            // Add the new entity to the DbContext
+            await _context.TasksItems.AddAsync(newTaskItem);
 
             // Save changes to the database
             await _context.SaveChangesAsync();
 
-            // w navs
-            var createdTaskItem = await _context.TasksItems.Include(o => o.Owner).FirstOrDefaultAsync(t => t.Id == newUserTask.Id);
+            // Include navigation property for Owner and retrieve the created TaskItem
+            var createdTaskItem = await _context.TasksItems.Include(t => t.Owner).FirstOrDefaultAsync(t => t.Id == newTaskItem.Id);
 
-            // Map the created UserTask entity back to a UserTaskDTO and return it
+            // Map the created entity back to a DTO and return it
             return _mapper.Map<TaskItemReadDTO>(createdTaskItem);
         }
 
+        /// <summary>
+        /// Get all TaskItems.
+        /// </summary>
+        /// <returns>A list of TaskItem DTOs.</returns>
         public async Task<List<TaskItemReadDTO>> GetAllTaskItems()
         {
-            var userTasks = await _context.TasksItems.ToListAsync();
+            var taskItems = await _context.TasksItems.ToListAsync();
 
-            return _mapper.Map<List<TaskItemReadDTO>>(userTasks);
+            return _mapper.Map<List<TaskItemReadDTO>>(taskItems);
         }
 
+        /// <summary>
+        /// Get a TaskItem by its ID.
+        /// </summary>
+        /// <param name="taskId">The ID of the TaskItem to retrieve.</param>
+        /// <returns>The TaskItem DTO.</returns>
         public async Task<TaskItemReadDTO> GetTaskItemById(int taskId)
         {
-            var userTask = await _context.TasksItems.SingleOrDefaultAsync(task => task.Id == taskId);
-            if (userTask == null)
+            var taskItem = await _context.TasksItems.SingleOrDefaultAsync(task => task.Id == taskId);
+
+            // Check if the TaskItem exists
+            if (taskItem == null)
             {
                 throw new Exception("Task not found");
             }
 
-            return _mapper.Map<TaskItemReadDTO>(userTask);
+            return _mapper.Map<TaskItemReadDTO>(taskItem);
         }
 
+        /// <summary>
+        /// Get all TaskItems for a specific user by UserID.
+        /// </summary>
+        /// <param name="userId">The ID of the user whose TaskItems to retrieve.</param>
+        /// <returns>A list of TaskItem DTOs for the specified user.</returns>
         public async Task<List<TaskItemReadDTO>> GetUserTaskItemsByUserId(int userId)
         {
-            var userTasks = await _context.TasksItems.Where(userTask => userTask.OwnerId == userId).ToListAsync();
+            var userTaskItems = await _context.TasksItems.Where(taskItem => taskItem.OwnerId == userId).ToListAsync();
 
-            return _mapper.Map<List<TaskItemReadDTO>>(userTasks);
+            return _mapper.Map<List<TaskItemReadDTO>>(userTaskItems);
         }
 
-        public async Task UpdateTaskItem(int taskId, TaskItemUpdateDTO userTaskDTO)
+        /// <summary>
+        /// Update an existing TaskItem.
+        /// </summary>
+        /// <param name="taskId">The ID of the TaskItem to update.</param>
+        /// <param name="taskItemDTO">The DTO containing updated data for the TaskItem.</param>
+        /// <returns>Task representing the completion of the update operation.</returns>
+        public async Task UpdateTaskItem(int taskId, TaskItemUpdateDTO taskItemDTO)
         {
-            var existingUserTask = await _context.TasksItems.FindAsync(taskId);
+            var existingTaskItem = await _context.TasksItems.FindAsync(taskId);
 
-            if (existingUserTask != null)
+            // Check if the TaskItem exists
+            if (existingTaskItem != null)
             {
-                // Update properties of existingUserTask based on userTaskDTO
-                _mapper.Map(userTaskDTO, existingUserTask);
+                // Recalculate DueDate
+                existingTaskItem.CalculateDueDate();
 
+                // Update properties of existing TaskItem based on DTO
+                _mapper.Map(taskItemDTO, existingTaskItem);
+
+                // Save changes to the database
                 await _context.SaveChangesAsync();
             }
         }
 
-        public async Task DeleteTaskItem(int userTaskId)
+        /// <summary>
+        /// Delete a TaskItem by its ID.
+        /// </summary>
+        /// <param name="taskId">The ID of the TaskItem to delete.</param>
+        /// <returns>Task representing the completion of the delete operation.</returns>
+        public async Task DeleteTaskItem(int taskId)
         {
-            var userTaskToDelete = await _context.TasksItems.FindAsync(userTaskId);
+            var taskItemToDelete = await _context.TasksItems.FindAsync(taskId);
 
-            if (userTaskToDelete != null)
+            // Check if the TaskItem exists
+            if (taskItemToDelete != null)
             {
-                _context.TasksItems.Remove(userTaskToDelete);
+                _context.TasksItems.Remove(taskItemToDelete);
                 await _context.SaveChangesAsync();
             }
         }

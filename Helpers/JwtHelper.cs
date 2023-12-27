@@ -11,6 +11,7 @@ namespace PTN_BackendAssignment.Helpers
         private static string? JwtAudience;
         private static string? JwtSecret;
         private static double JwtExiprationHrs;
+
         // Initialize method to set configuration values
         public static void Initialize(IConfiguration configuration)
         {
